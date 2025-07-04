@@ -1,0 +1,9 @@
+[package]
+name = "gow_tools"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+libmem = { version = "*" }
+device_query = { version = "*" }
+figlet-rs = { version = "*" }
