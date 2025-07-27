@@ -35,6 +35,11 @@ While running the app, you can also type commands into the terminal:
 
 ---
 
+## Screenshots
+![tools](gopw-tools-img.png)
+![demo](gow-tools-demo.png)
+![demo2](gow-tools-demo-2.png)
+
 ## 🛠 Dependencies
 
 - [`libmem`](https://github.com/rdbo/libmem) – Rust memory editing abstraction
@@ -42,7 +47,6 @@ While running the app, you can also type commands into the terminal:
 - [`figlet-rs`](https://crates.io/crates/figlet-rs) – ASCII banner
 
 ---
-
 ## 🚀 Build Instructions
 
 Make sure you have Rust installed:  
