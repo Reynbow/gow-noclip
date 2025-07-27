@@ -78,6 +78,43 @@ pub fn get_height(process: &Process, base: usize) -> Option<f32> {
     None
 }
 
+pub fn set_acceleration(process: &Process, base: usize, value: f32) -> Option<()> {
+    if let Some(addr) = resolve_pointer_chain(
+        process,
+        base + memory_mappings::ACCELERATION_PTR.0,
+        memory_mappings::ACCELERATION_PTR.1,
+    ) {
+        if libmem::write_memory_ex(process, addr, &value).is_some() {
+            println!("Acceleration set to {}", value);
+            return Some(());
+        } else {
+            println!("Failed to write acceleration at 0x{:X}", addr);
+        }
+    } else {
+        println!("Failed to resolve acceleration pointer chain.");
+    }
+    None
+}
+
+pub fn get_acceleration(process: &Process, base: usize) -> Option<f32> {
+    if let Some(addr) = resolve_pointer_chain(
+        process,
+        base + memory_mappings::ACCELERATION_PTR.0,
+        memory_mappings::ACCELERATION_PTR.1,
+    ) {
+        println!("Resolved Acceleration address: 0x{:X}", addr);
+        if let Some(val) = libmem::read_memory_ex::<f32>(process, addr) {
+            println!("Current acceleration: {}", val);
+            return Some(val);
+        } else {
+            println!("Failed to read current acceleration at 0x{:X}", addr);
+        }
+    } else {
+        println!("Failed to resolve acceleration pointer chain.");
+    }
+    None
+}
+
 pub fn move_left_right(process: &Process, base: usize, lr_change: f32) {
     if let Some(addr) = resolve_pointer_chain(
         process,

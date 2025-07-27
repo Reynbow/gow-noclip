@@ -52,6 +52,10 @@ fn main() {
     let target_height = Arc::new(std::sync::Mutex::new(None::<f32>));
     let target_height_clone = target_height.clone();
 
+    let gravity_locked = Arc::new(AtomicBool::new(true)); // default is off, you dont wanna fall through the map
+    let gravity_locked_clone = gravity_locked.clone();
+    let gravity_locked_ui = gravity_locked.clone();
+
     thread::spawn(move || {
         let mut g_was_down: bool = false;
 
@@ -79,21 +83,31 @@ fn main() {
                 let keys = device_state.get_keys();
 
                 if keys.contains(&Keycode::W) {
-                    injector::move_forward(&proc_clone, base, 0.5);
+                    injector::move_forward(&proc_clone, base, -0.25);
                 }
                 if keys.contains(&Keycode::S) {
-                    injector::move_forward(&proc_clone, base, -0.5);
+                    injector::move_forward(&proc_clone, base, 0.25);
                 }
                 if keys.contains(&Keycode::A) {
-                    injector::move_left_right(&proc_clone, base, -0.5);
+                    injector::move_left_right(&proc_clone, base, -0.2);
                 }
                 if keys.contains(&Keycode::D) {
-                    injector::move_left_right(&proc_clone, base, 0.5);
+                    injector::move_left_right(&proc_clone, base, 0.2);
+                }
+
+                if keys.contains(&Keycode::L) {
+                    gravity_locked.store(true, Ordering::Relaxed);
+                    println!("Gravity locked (disabled).");
+                }
+
+                if keys.contains(&Keycode::U) {
+                    gravity_locked.store(false, Ordering::Relaxed);
+                    println!("Gravity unlocked (enabled).");
                 }
 
                 if keys.contains(&Keycode::Q) {
                     if let Some(current) = injector::get_height(&proc_clone, base) {
-                        let new_target = current + 0.5;
+                        let new_target = current + 1.5;
                         injector::change_height(&proc_clone, base, 0.5);
                         let mut target = target_height_clone.lock().unwrap();
                         *target = Some(new_target);
@@ -116,6 +130,17 @@ fn main() {
                         if current < target {
                             injector::set_height(&proc_clone, base, target);
                         }
+
+                        // acceleriation / gravity hack here
+                        if gravity_locked_clone.load(Ordering::Relaxed) {
+                            if let Some(current_accel) =
+                                injector::get_acceleration(&proc_clone, base)
+                            {
+                                if current_accel.abs() > 0.01 {
+                                    injector::set_acceleration(&proc_clone, base, 0.0);
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -125,13 +150,31 @@ fn main() {
         println!("Movement thread stopped.");
     });
 
+    // yes, i used GPT to generate this text
+    // sue me
     println!(
         "Gow Ragnarok No-Clip Started.\n\
-        Use W/A/S/D/Q/E for movement.\n\
-        Commands: G (enable / disable controller) l (lock velocity), u (unlock velocity), fh (freeze height), ufh (unfreeze height), x (exit)."
+        (c) 2025 alexanderdth\n\
+        \n================== Controls ==================\n\
+        [G]    → Toggle No-Clip Mode (enables/disables input injection)\n\
+        [W]    → Move forward (while No-Clip is active)\n\
+        [S]    → Move backward\n\
+        [A]    → Strafe left\n\
+        [D]    → Strafe right\n\
+        [Q]    → Ascend (move up)\n\
+        [E]    → Descend (move down)\n\
+        [L]    → Lock gravity (freeze vertical acceleration)\n\
+        [U]    → Unlock gravity (restore falling behavior)\n\
+        [X]    → Exit the program\n\
+    \n\
+        ▶ Type commands in console for instant movement:\n\
+        - w/s/a/d/q/e → Same as above, instant position updates\n\
+        - l/u         → Lock/unlock gravity manually\n\
+        - x           → Exit cleanly\n\
+    =================================================\n"
     );
 
-    // Command loop
+    // command loop starts here
     loop {
         print!("> ");
         stdout().flush().unwrap();
@@ -158,6 +201,14 @@ fn main() {
                 } else {
                     println!("Failed to change height.");
                 }
+            }
+            "l" => {
+                gravity_locked_ui.store(true, Ordering::Relaxed);
+                println!("Gravity locked (disabled).");
+            }
+            "u" => {
+                gravity_locked_ui.store(false, Ordering::Relaxed);
+                println!("Gravity unlocked (enabled).");
             }
             "x" => {
                 println!("Exiting...");
