@@ -11,7 +11,8 @@ This tool allows you to manipulate Kratos' position and gravity in real-time by 
 ## ✨ Features
 
 - ✅ **W / A / S / D** – Move Kratos forward, left, back, right (camera-relative)
-- ✅ **Q / E** – Move up / down vertically
+- ✅ **LSHIFT / LCTRL** – Move up / down vertically
+- ✅ **Q / E** – Rotate Left / Right
 - ✅ **G** – Toggle No-Clip Mode (enables or disables live input injection)
 - ✅ **L** – Lock gravity (prevents falling by freezing vertical acceleration)
 - ✅ **U** – Unlock gravity (restores default falling behavior)

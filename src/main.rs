@@ -7,7 +7,7 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread;
 use std::time::Duration;
-use tools::injector;
+use tools::injector::{self, turn_left_right};
 use tools::memory_mappings;
 
 fn main() {
@@ -78,21 +78,39 @@ fn main() {
             } else {
                 g_was_down = false;
             }
-
             if input_enabled_clone.load(Ordering::Relaxed) {
                 let keys = device_state.get_keys();
 
+                let mut forward = 0.0;
+                let mut strafe = 0.0;
+                let mut rotate = 0.0;
+
                 if keys.contains(&Keycode::W) {
-                    injector::move_forward(&proc_clone, base, -0.25);
+                    forward = -0.2;
                 }
                 if keys.contains(&Keycode::S) {
-                    injector::move_forward(&proc_clone, base, 0.25);
-                }
-                if keys.contains(&Keycode::A) {
-                    injector::move_left_right(&proc_clone, base, -0.2);
+                    forward = 0.2;
                 }
                 if keys.contains(&Keycode::D) {
-                    injector::move_left_right(&proc_clone, base, 0.2);
+                    strafe = 0.2;
+                }
+                if keys.contains(&Keycode::A) {
+                    strafe = -0.2;
+                }
+
+                if keys.contains(&Keycode::Q) {
+                    rotate = 0.03;
+                }
+                if keys.contains(&Keycode::E) {
+                    rotate = -0.03;
+                }
+
+                if forward != 0.0 || strafe != 0.0 {
+                    injector::apply_directional_movement(&proc_clone, base, forward, strafe);
+                }
+
+                if rotate != 0.0 {
+                    turn_left_right(&proc_clone, base, rotate);
                 }
 
                 if keys.contains(&Keycode::L) {
@@ -105,22 +123,20 @@ fn main() {
                     println!("Gravity unlocked (enabled).");
                 }
 
-                if keys.contains(&Keycode::Q) {
+                if keys.contains(&Keycode::LShift) {
                     if let Some(current) = injector::get_height(&proc_clone, base) {
                         let new_target = current + 1.5;
                         injector::change_height(&proc_clone, base, 0.5);
                         let mut target = target_height_clone.lock().unwrap();
                         *target = Some(new_target);
-                        println!("Target height set: {}", new_target);
                     }
                 }
-                if keys.contains(&Keycode::E) {
+                if keys.contains(&Keycode::LControl) {
                     if let Some(current) = injector::get_height(&proc_clone, base) {
                         let new_target = current - 0.5;
                         injector::change_height(&proc_clone, base, -0.5);
                         let mut target = target_height_clone.lock().unwrap();
                         *target = Some(new_target);
-                        println!("Target height set: {}", new_target);
                     }
                 }
 
@@ -156,16 +172,18 @@ fn main() {
         "Gow Ragnarok No-Clip Started.\n\
         (c) 2025 alexanderdth\n\
         \n================== Controls ==================\n\
-        [G]    → Toggle No-Clip Mode (enables/disables input injection)\n\
-        [W]    → Move forward (while No-Clip is active)\n\
-        [S]    → Move backward\n\
-        [A]    → Strafe left\n\
-        [D]    → Strafe right\n\
-        [Q]    → Ascend (move up)\n\
-        [E]    → Descend (move down)\n\
-        [L]    → Lock gravity (freeze vertical acceleration)\n\
-        [U]    → Unlock gravity (restore falling behavior)\n\
-        [X]    → Exit the program\n\
+        [G]      → Toggle No-Clip Mode (enables/disables input injection)\n\
+        [W]      → Move forward (while No-Clip is active)\n\
+        [S]      → Move backward\n\
+        [A]      → Strafe left\n\
+        [D]      → Strafe right\n\
+        [Q]      → Rotate Left\n\
+        [E]      → Rotate Right\n\
+        [LSHIFT] → Ascend (move up)\n\
+        [LCTRL]  → Descend (move down)\n\
+        [L]      → Lock gravity (freeze vertical acceleration)\n\
+        [U]      → Unlock gravity (restore falling behavior)\n\
+        [X]      → Exit the program\n\
     \n\
         ▶ Type commands in console for instant movement:\n\
         - w/s/a/d/q/e → Same as above, instant position updates\n\
