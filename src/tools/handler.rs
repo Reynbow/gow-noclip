@@ -36,8 +36,7 @@ pub fn boot() {
     // yes, i used GPT to generate this text
     // sue me
     println!(
-        "Gow Ragnarok No-Clip Started.\n\
-        (c) 2025 alexanderdth\n\
+        "
         \n================== Controls ==================\n\
         [G]      → Toggle No-Clip Mode (enables/disables input injection)\n\
         [W]      → Move forward (while No-Clip is active)\n\
