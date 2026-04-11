@@ -198,6 +198,9 @@ pub fn turn_left_right(process: &Process, base: usize, lr_change: f32) {
     }
 }
 
+// this needs to be improved
+// we have to make use of the yaw
+// in order to properly compute directional movement
 pub fn apply_directional_movement(
     process: &Process,
     base: usize,

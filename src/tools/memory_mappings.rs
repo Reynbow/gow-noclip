@@ -1,3 +1,5 @@
+// use signature scanning
+// this is too unreliable
 pub const GOW_PROC_NAME: &str = "GoWR.exe";
 
 pub const HEIGHT_PTR: (usize, &[usize]) = (0x29EBB00, &[0x3E4]); //move left
