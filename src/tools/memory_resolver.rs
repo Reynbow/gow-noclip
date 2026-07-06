@@ -32,7 +32,7 @@ pub fn resolve_mappings(process: &Process, base: usize) -> Result<&'static GameM
     if let (Some(x), Some(y), Some(z)) = (
         read_transform_field(process, base, &mappings, memory_mappings::POS_X_OFFSET),
         read_transform_field(process, base, &mappings, memory_mappings::POS_Y_OFFSET),
-        read_transform_field(process, base, &mappings, memory_mappings::POS_Z_OFFSET),
+        read_z_field(process, base, &mappings),
     ) {
         println!(
             "Transform sample: x={x:.3} y={y:.3} z={z:.3}\n  transform global: 0x{:X}\n  directional global: 0x{:X}",
@@ -129,7 +129,7 @@ fn validate_transform(process: &Process, base: usize, mappings: &GameMappings) -
         .ok_or_else(|| "failed to read X".to_string())?;
     let y = read_transform_field(process, base, mappings, memory_mappings::POS_Y_OFFSET)
         .ok_or_else(|| "failed to read Y".to_string())?;
-    let z = read_transform_field(process, base, mappings, memory_mappings::POS_Z_OFFSET)
+    let z = read_z_field(process, base, mappings)
         .ok_or_else(|| "failed to read Z".to_string())?;
 
     if !is_plausible_coord(x) || !is_plausible_coord(y) || !is_plausible_coord(z) {
@@ -169,6 +169,15 @@ fn read_transform_field(
         memory_mappings::TRANSFORM_CHAIN,
     )?;
     read_memory::<f32>(process, transform + field)
+}
+
+fn read_z_field(process: &Process, base: usize, mappings: &GameMappings) -> Option<f32> {
+    let addr = resolve_chain(
+        process,
+        base + mappings.transform_global_rva,
+        memory_mappings::POS_Z_CHAIN,
+    )?;
+    read_memory::<f32>(process, addr)
 }
 
 fn resolve_chain(process: &Process, mut addr: usize, offsets: &[usize]) -> Option<usize> {

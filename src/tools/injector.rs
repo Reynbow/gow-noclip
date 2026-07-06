@@ -29,6 +29,14 @@ fn transform_field(process: &Process, base: usize, field: usize) -> Option<usize
     Some(transform_base(process, base)? + field)
 }
 
+fn z_field(process: &Process, base: usize) -> Option<usize> {
+    resolve_pointer_chain(
+        process,
+        base + mappings().transform_global_rva,
+        memory_mappings::POS_Z_CHAIN,
+    )
+}
+
 fn directional_field(process: &Process, base: usize) -> Option<usize> {
     resolve_pointer_chain(
         process,
@@ -56,7 +64,7 @@ pub fn get_height(process: &Process, base: usize) -> Option<f32> {
 
 #[allow(dead_code)]
 pub fn get_forward(process: &Process, base: usize) -> Option<f32> {
-    let addr = transform_field(process, base, memory_mappings::POS_Z_OFFSET)?;
+    let addr = z_field(process, base)?;
     libmem::read_memory_ex::<f32>(process, addr)
 }
 
@@ -79,7 +87,7 @@ pub fn move_left_right(process: &Process, base: usize, lr_change: f32) {
 }
 
 pub fn move_forward(process: &Process, base: usize, forward_change: f32) {
-    if let Some(addr) = transform_field(process, base, memory_mappings::POS_Z_OFFSET) {
+    if let Some(addr) = z_field(process, base) {
         read_write_memory(process, addr, forward_change);
     } else {
         println!("Failed to resolve Z position field.");
@@ -120,7 +128,7 @@ pub fn apply_directional_movement(
     let delta_z = forward.1 * move_forward + right.1 * move_right;
 
     let x_addr = transform_field(process, base, memory_mappings::POS_X_OFFSET)?;
-    let z_addr = transform_field(process, base, memory_mappings::POS_Z_OFFSET)?;
+    let z_addr = z_field(process, base)?;
 
     read_write_memory(process, x_addr, delta_x);
     read_write_memory(process, z_addr, delta_z);

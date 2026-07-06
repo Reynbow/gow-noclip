@@ -5,7 +5,11 @@ pub const TRANSFORM_GLOBAL: usize = 0x5D95520;
 pub const DIRECTIONAL_GLOBAL: usize = 0x5D954A0;
 
 /// Pointer chain from transform global to the live character transform object.
-pub const TRANSFORM_CHAIN: &[usize] = &[0x2A0];
+/// Two dereferences: global -> +0x2A0 -> transform object.
+pub const TRANSFORM_CHAIN: &[usize] = &[0x2A0, 0x0];
+
+/// Full chain to Z (matches the original working forward pointer path).
+pub const POS_Z_CHAIN: &[usize] = &[0x2A0, 0x8C0];
 
 /// Field offsets inside the transform object (updated game build).
 pub const POS_X_OFFSET: usize = 0x8C8;
