@@ -1,7 +1,9 @@
 use crate::tools::injector::{self, turn_left_right};
 use crate::tools::memory_mappings;
+use crate::tools::memory_resolver;
 use device_query::{DeviceQuery, DeviceState, Keycode};
 use libmem::*;
+use std::env;
 use std::io::{self, Write, stdin, stdout};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -9,6 +11,8 @@ use std::thread;
 use std::time::Duration;
 
 pub fn boot() {
+    let scan_only = env::args().any(|arg| arg == "--scan" || arg == "-s");
+
     let process = match find_process(memory_mappings::GOW_PROC_NAME) {
         Some(p) => p,
         None => {
@@ -31,7 +35,22 @@ pub fn boot() {
     };
 
     let base = module.base;
-    println!("GoWR.exe base: 0x{:X}", base);
+    println!("GoWR.exe base: 0x{base:X}");
+
+    if scan_only {
+        if let Err(err) = memory_resolver::scan_report(&process, base) {
+            println!("Scan failed: {err}");
+        }
+        await_for_user_interaction();
+        return;
+    }
+
+    if let Err(err) = injector::init_mappings(&process, base) {
+        println!("{err}");
+        println!("Run with --scan while in-game to diagnose offset resolution.");
+        await_for_user_interaction();
+        return;
+    }
 
     // yes, i used GPT to generate this text
     // sue me

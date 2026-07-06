@@ -162,7 +162,7 @@ impl ProcessImage {
     }
 
     /// Read a little-endian `i32` at a virtual address.
-    fn read_i32_local(&self, va: u64) -> Option<i32> {
+    pub fn read_i32_local(&self, va: u64) -> Option<i32> {
         for sec in &self.sections {
             let sec_start = self.base + sec.virtual_address as u64;
             let sec_end = sec_start + sec.data.len() as u64;

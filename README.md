@@ -57,3 +57,17 @@ Then build the project:
 
 ```bash
 cargo build --release
+```
+
+Run as **Administrator** with the game already loaded and Kratos controllable in-game.
+
+### Game update / broken offsets
+
+If a game patch breaks movement, the tool now **auto-discovers** memory offsets at startup
+instead of relying only on hardcoded addresses. To diagnose resolution:
+
+```bash
+cargo run --release -- --scan
+```
+
+This prints whether legacy and auto-discovered offsets resolve correctly while you are in-game.
