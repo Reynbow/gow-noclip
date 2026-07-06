@@ -17,193 +17,86 @@ pub fn resolve_pointer_chain(
     Some(addr)
 }
 
-fn position_global_addr(base: usize) -> usize {
-    base + mappings().position_global_rva
+fn transform_base(process: &Process, base: usize) -> Option<usize> {
+    resolve_pointer_chain(
+        process,
+        base + mappings().transform_global_rva,
+        memory_mappings::TRANSFORM_CHAIN,
+    )
 }
 
-fn forward_global_addr(base: usize) -> usize {
-    base + mappings().forward_global_rva
+fn transform_field(process: &Process, base: usize, field: usize) -> Option<usize> {
+    Some(transform_base(process, base)? + field)
 }
 
-fn directional_global_addr(base: usize) -> usize {
-    base + mappings().directional_global_rva
+fn directional_field(process: &Process, base: usize) -> Option<usize> {
+    resolve_pointer_chain(
+        process,
+        base + mappings().directional_global_rva,
+        memory_mappings::DIRECTIONAL_CHAIN,
+    )
 }
 
 pub fn change_height(process: &Process, base: usize, height_change: f32) -> Option<f32> {
-    if let Some(addr) = resolve_pointer_chain(
-        process,
-        position_global_addr(base),
-        &[memory_mappings::POS_Y_OFFSET],
-    ) {
-        if let Some(val) = libmem::read_memory_ex::<f32>(process, addr) {
-            let new_val = val + height_change;
-            if libmem::write_memory_ex(process, addr, &new_val).is_some() {
-                return Some(new_val);
-            } else {
-                println!("Failed to write new height at 0x{addr:X}");
-            }
-        } else {
-            println!("Failed to read current height at 0x{addr:X}");
-        }
-    } else {
-        println!("Failed to resolve height pointer chain.");
-    }
-    None
+    let addr = transform_field(process, base, memory_mappings::POS_Y_OFFSET)?;
+    let val = libmem::read_memory_ex::<f32>(process, addr)?;
+    let new_val = val + height_change;
+    libmem::write_memory_ex(process, addr, &new_val).map(|_| new_val)
 }
 
 pub fn set_height(process: &Process, base: usize, value: f32) -> Option<()> {
-    if let Some(addr) = resolve_pointer_chain(
-        process,
-        position_global_addr(base),
-        &[memory_mappings::POS_Y_OFFSET],
-    ) {
-        if libmem::write_memory_ex(process, addr, &value).is_some() {
-            return Some(());
-        } else {
-            println!("Failed to write height at 0x{addr:X}");
-        }
-    } else {
-        println!("Failed to resolve height pointer chain.");
-    }
-    None
+    let addr = transform_field(process, base, memory_mappings::POS_Y_OFFSET)?;
+    libmem::write_memory_ex(process, addr, &value).map(|_| ())
 }
 
 pub fn get_height(process: &Process, base: usize) -> Option<f32> {
-    if let Some(addr) = resolve_pointer_chain(
-        process,
-        position_global_addr(base),
-        &[memory_mappings::POS_Y_OFFSET],
-    ) {
-        if let Some(val) = libmem::read_memory_ex::<f32>(process, addr) {
-            return Some(val);
-        } else {
-            println!("Failed to read current height at 0x{addr:X}");
-        }
-    } else {
-        println!("Failed to resolve height pointer chain.");
-    }
-    None
+    let addr = transform_field(process, base, memory_mappings::POS_Y_OFFSET)?;
+    libmem::read_memory_ex::<f32>(process, addr)
 }
 
 #[allow(dead_code)]
 pub fn get_forward(process: &Process, base: usize) -> Option<f32> {
-    if let Some(addr) = resolve_pointer_chain(
-        process,
-        forward_global_addr(base),
-        memory_mappings::FORWARD_CHAIN,
-    ) {
-        if let Some(val) = libmem::read_memory_ex::<f32>(process, addr) {
-            return Some(val);
-        } else {
-            println!("Failed to read current Forward / Backward at 0x{addr:X}");
-        }
-    } else {
-        println!("Failed to resolve Forward / Backward pointer chain.");
-    }
-    None
-}
-
-#[allow(dead_code)]
-fn get_left_right(process: &Process, base: usize) -> Option<f32> {
-    if let Some(addr) = resolve_pointer_chain(
-        process,
-        position_global_addr(base),
-        &[memory_mappings::POS_X_OFFSET],
-    ) {
-        if let Some(val) = libmem::read_memory_ex::<f32>(process, addr) {
-            return Some(val);
-        } else {
-            println!("Failed to read current left / right at 0x{addr:X}");
-        }
-    } else {
-        println!("Failed to resolve left / right pointer chain.");
-    }
-    None
+    let addr = transform_field(process, base, memory_mappings::POS_Z_OFFSET)?;
+    libmem::read_memory_ex::<f32>(process, addr)
 }
 
 pub fn set_acceleration(process: &Process, base: usize, value: f32) -> Option<()> {
-    if let Some(addr) = resolve_pointer_chain(
-        process,
-        position_global_addr(base),
-        &[memory_mappings::ACCEL_OFFSET],
-    ) {
-        if libmem::write_memory_ex(process, addr, &value).is_some() {
-            return Some(());
-        } else {
-            println!("Failed to write acceleration at 0x{addr:X}");
-        }
-    } else {
-        println!("Failed to resolve acceleration pointer chain.");
-    }
-    None
+    let addr = transform_field(process, base, memory_mappings::ACCEL_OFFSET)?;
+    libmem::write_memory_ex(process, addr, &value).map(|_| ())
 }
 
 pub fn get_acceleration(process: &Process, base: usize) -> Option<f32> {
-    if let Some(addr) = resolve_pointer_chain(
-        process,
-        position_global_addr(base),
-        &[memory_mappings::ACCEL_OFFSET],
-    ) {
-        if let Some(val) = libmem::read_memory_ex::<f32>(process, addr) {
-            return Some(val);
-        } else {
-            println!("Failed to read current acceleration at 0x{addr:X}");
-        }
-    } else {
-        println!("Failed to resolve acceleration pointer chain.");
-    }
-    None
+    let addr = transform_field(process, base, memory_mappings::ACCEL_OFFSET)?;
+    libmem::read_memory_ex::<f32>(process, addr)
 }
 
 pub fn move_left_right(process: &Process, base: usize, lr_change: f32) {
-    if let Some(addr) = resolve_pointer_chain(
-        process,
-        position_global_addr(base),
-        &[memory_mappings::POS_X_OFFSET],
-    ) {
+    if let Some(addr) = transform_field(process, base, memory_mappings::POS_X_OFFSET) {
         read_write_memory(process, addr, lr_change);
     } else {
-        println!("Failed to resolve left-right pointer");
+        println!("Failed to resolve X position field.");
     }
 }
 
 pub fn move_forward(process: &Process, base: usize, forward_change: f32) {
-    if let Some(addr) = resolve_pointer_chain(
-        process,
-        forward_global_addr(base),
-        memory_mappings::FORWARD_CHAIN,
-    ) {
+    if let Some(addr) = transform_field(process, base, memory_mappings::POS_Z_OFFSET) {
         read_write_memory(process, addr, forward_change);
     } else {
-        println!("Failed to resolve forward pointer");
+        println!("Failed to resolve Z position field.");
     }
 }
 
 fn read_write_memory(process: &Process, addr: usize, change: f32) -> Option<()> {
-    if let Some(val) = libmem::read_memory_ex::<f32>(process, addr) {
-        let new_val = val + change;
-        match libmem::write_memory_ex(process, addr, &new_val) {
-            Some(()) => Some(()),
-            None => {
-                println!("Failed to write value at 0x{addr:X}:");
-                None
-            }
-        }
-    } else {
-        println!("Failed to read value at 0x{addr:X}");
-        None
-    }
+    let val = libmem::read_memory_ex::<f32>(process, addr)?;
+    let new_val = val + change;
+    libmem::write_memory_ex(process, addr, &new_val).map(|_| ())
 }
 
 pub fn turn_left_right(process: &Process, base: usize, lr_change: f32) {
-    if let Some(addr) = resolve_pointer_chain(
-        process,
-        directional_global_addr(base),
-        memory_mappings::DIRECTIONAL_CHAIN,
-    ) {
+    if let Some(addr) = directional_field(process, base) {
         read_write_memory(process, addr, lr_change);
     } else {
-        println!("Failed to resolve left-right rotational pointer");
+        println!("Failed to resolve directional field.");
     }
 }
 
@@ -213,11 +106,7 @@ pub fn apply_directional_movement(
     move_forward: f32,
     move_right: f32,
 ) -> Option<()> {
-    let dir_addr = resolve_pointer_chain(
-        process,
-        directional_global_addr(base),
-        memory_mappings::DIRECTIONAL_CHAIN,
-    )?;
+    let dir_addr = directional_field(process, base)?;
 
     let fx = read_memory_ex::<f32>(process, dir_addr)?;
     let fz = read_memory_ex::<f32>(process, dir_addr + 8)?;
@@ -230,16 +119,8 @@ pub fn apply_directional_movement(
     let delta_x = forward.0 * move_forward + right.0 * move_right;
     let delta_z = forward.1 * move_forward + right.1 * move_right;
 
-    let x_addr = resolve_pointer_chain(
-        process,
-        position_global_addr(base),
-        &[memory_mappings::POS_X_OFFSET],
-    )?;
-    let z_addr = resolve_pointer_chain(
-        process,
-        forward_global_addr(base),
-        memory_mappings::FORWARD_CHAIN,
-    )?;
+    let x_addr = transform_field(process, base, memory_mappings::POS_X_OFFSET)?;
+    let z_addr = transform_field(process, base, memory_mappings::POS_Z_OFFSET)?;
 
     read_write_memory(process, x_addr, delta_x);
     read_write_memory(process, z_addr, delta_z);
